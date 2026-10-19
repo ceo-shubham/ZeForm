@@ -38,7 +38,7 @@ export default function HomePage() {
             <p className="text-lg sm:text-xl text-slate-600 mb-8 leading-relaxed">
               Design powerful forms in seconds. Give every form its own dedicated link like{" "}
               <span className="font-mono font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
-                xxxx.zeform.zenstro.space
+                your-form.zeform.zenstro.space
               </span>
               , auto-score quiz replies, set auto-expiry deadlines, and track Google respondent emails.
             </p>
@@ -156,7 +156,7 @@ export default function HomePage() {
               <p className="text-sm text-slate-600 leading-relaxed">
                 Give your form any unique name you want. It immediately resolves at{" "}
                 <code className="text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded text-xs font-bold">
-                  xxxx.zeform.zenstro.space
+                  your-form.zeform.zenstro.space
                 </code>{" "}
                 via Cloudflare DNS wildcard mapping.
               </p>

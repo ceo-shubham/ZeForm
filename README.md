@@ -2,7 +2,7 @@
 
 > **Branding:** ZeForm*  
 > **Main Domain:** `zeform.zenstro.space`  
-> **Custom Subdomains:** `xxxx.zeform.zenstro.space`  
+> **Custom Subdomains:** `your-form.zeform.zenstro.space`  
 > **Master Admin:** `ceo.shubhampathak@gmail.com`
 
 ---
@@ -11,7 +11,7 @@
 
 ZeForm* is a modern Google Forms alternative with built-in superpowers:
 
-1. **Custom Subdomains (`xxxx.zeform.zenstro.space`)**
+1. **Custom Subdomains (`your-form.zeform.zenstro.space`)**
    - Each creator can pick their own custom subdomain slug.
    - Powered by **Cloudflare Wildcard DNS** and Next.js dynamic middleware rewriting for zero-latency routing.
    - Built-in real-time subdomain availability checker.
@@ -101,7 +101,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## ☁️ Cloudflare Setup for Wildcard Subdomains
 
-To enable `xxxx.zeform.zenstro.space` for any user subdomain automatically:
+To enable `your-form.zeform.zenstro.space` for any user subdomain automatically:
 
 1. Log into your [Cloudflare Dashboard](https://dash.cloudflare.com) and select the `zenstro.space` domain.
 2. Go to **DNS > Records** and click **Add Record**:

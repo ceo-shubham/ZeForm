@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       zoneIdConfigured: Boolean(process.env.CLOUDFLARE_ZONE_ID),
       connectionTest: cfStatus,
       instructions: {
-        wildcardDns: `Add a CNAME record in Cloudflare: Name = *.zeform, Target = ${MAIN_DOMAIN} (or your server/Vercel CNAME) with Proxy turned ON. This immediately powers all xxxx.zeform.zenstro.space subdomains!`,
+        wildcardDns: `Add a CNAME record in Cloudflare: Name = *.zeform, Target = ${MAIN_DOMAIN} (or your server/Vercel CNAME) with Proxy turned ON. This immediately powers all your-form.zeform.zenstro.space custom subdomains!`,
       },
     });
   } catch (error: any) {

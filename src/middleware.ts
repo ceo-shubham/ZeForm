@@ -33,7 +33,7 @@ export default async function middleware(req: NextRequest) {
   } else if (hostname.endsWith(`.${mainDomain}`)) {
     currentSubdomain = hostname.replace(`.${mainDomain}`, "");
   } else if (hostname.endsWith(".zenstro.space") && hostname !== "zeform.zenstro.space") {
-    // In case user sets xxxx.zeform.zenstro.space
+    // In case user accesses custom subdomains on zeform.zenstro.space
     const withoutSuffix = hostname.replace(".zenstro.space", "");
     if (withoutSuffix.endsWith(".zeform")) {
       currentSubdomain = withoutSuffix.replace(".zeform", "");

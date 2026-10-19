@@ -463,7 +463,7 @@ export default function UserDashboard() {
                     Custom Subdomain <span className="text-indigo-600">*</span>
                   </label>
                   <span className="text-[11px] text-slate-400">
-                    xxxx.{MAIN_DOMAIN}
+                    your-form.{MAIN_DOMAIN}
                   </span>
                 </div>
                 <div className="flex rounded-xl border border-slate-200 overflow-hidden focus-within:border-indigo-600 focus-within:ring-2 focus-within:ring-indigo-100">

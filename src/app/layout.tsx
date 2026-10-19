@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 export const metadata: Metadata = {
   title: "ZeForm* - Modern Form Builder with Custom Subdomains & Auto Scoring",
   description:
-    "Build beautiful forms like Google Forms with custom subdomains (xxxx.zeform.zenstro.space), automated expiration timers, instant quiz auto-scoring, and respondent Google tracking.",
+    "Build beautiful forms like Google Forms with custom subdomains (your-form.zeform.zenstro.space), automated expiration timers, instant quiz auto-scoring, and respondent Google tracking.",
   icons: {
     icon: "/favicon.ico",
   },

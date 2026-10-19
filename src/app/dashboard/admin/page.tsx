@@ -578,7 +578,7 @@ export default function AdminDashboard() {
 
             <div className="space-y-4">
               <h4 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                How Wildcard Subdomains Work (`xxxx.{MAIN_DOMAIN}`)
+                How Wildcard Subdomains Work (`your-form.{MAIN_DOMAIN}`)
               </h4>
 
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 font-mono text-xs text-slate-800 space-y-2">
