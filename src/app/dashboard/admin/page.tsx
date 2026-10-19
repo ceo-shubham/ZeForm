@@ -191,7 +191,7 @@ export default function AdminDashboard() {
               <span>Master Administrator Console</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
-              ZeForm* System Operations
+              ZeForm. System Operations
             </h1>
             <p className="text-amber-100 text-sm mt-1 max-w-xl">
               Logged in as <strong className="font-mono underline">{userEmail}</strong>. You have full oversight of all platform users, generated forms, and response telemetry.

@@ -177,7 +177,7 @@ export default function PublicFormView({ slug }: { slug: string }) {
             {closedReason}
           </p>
           <div className="pt-6 border-t border-slate-100 text-xs text-slate-400">
-            Powered by <strong>ZeForm*</strong> &bull; Custom Form Engine
+            Powered by <strong>ZeForm.</strong> &bull; Custom Form Engine
           </div>
         </div>
       </div>
@@ -220,7 +220,7 @@ export default function PublicFormView({ slug }: { slug: string }) {
           <div className="pt-6 border-t border-slate-100 flex items-center justify-center gap-2 text-xs text-slate-400">
             <span>Submitted via</span>
             <span className="font-bold text-slate-700">
-              ZeForm<span className="text-indigo-600">*</span>
+              ZeForm<span className="text-indigo-600 font-bold">.</span>
             </span>
           </div>
         </div>
@@ -504,7 +504,7 @@ export default function PublicFormView({ slug }: { slug: string }) {
 
         {/* Footer info */}
         <div className="text-center text-xs text-slate-400 py-6">
-          Powered by <strong>ZeForm*</strong> &bull; Custom Subdomain Form Engine
+          Powered by <strong>ZeForm.</strong> &bull; Custom Subdomain Form Engine
         </div>
       </div>
     </div>

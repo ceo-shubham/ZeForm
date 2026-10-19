@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { useSession, signOut } from "@/components/Providers";
 import { 
-  FileText, 
   ShieldCheck, 
   PlusCircle, 
   LogOut, 
@@ -22,15 +21,11 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-700 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-200 group-hover:scale-105 transition-transform">
-            <FileText className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex items-center font-black text-2xl tracking-tight text-slate-900">
-            <span>ZeForm</span>
-            <span className="text-indigo-600 text-3xl font-extrabold leading-none ml-0.5 animate-pulse">*</span>
-          </div>
+        {/* Brand Logo - Text Only */}
+        <Link href="/" className="flex items-center group">
+          <span className="font-black text-2xl tracking-tight text-slate-900 group-hover:opacity-90 transition-opacity">
+            ZeForm<span className="text-indigo-600 font-black text-3xl leading-none">.</span>
+          </span>
         </Link>
 
         {/* Navigation Actions */}

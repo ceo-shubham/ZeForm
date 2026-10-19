@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { signIn } from "@/components/Providers";
 import { useRouter } from "next/navigation";
-import { FileText, ShieldCheck, User, ArrowRight, Sparkles } from "lucide-react";
+import { ShieldCheck, User, ArrowRight, Sparkles } from "lucide-react";
 import { ADMIN_EMAIL } from "@/lib/utils";
 
 export const runtime = "edge";
@@ -58,12 +58,9 @@ export default function SignInPage() {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
         {/* Header */}
         <div className="p-8 text-center bg-gradient-to-b from-indigo-50/60 to-white border-b border-slate-100">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 shadow-md shadow-indigo-200 text-white mb-4">
-            <FileText className="w-7 h-7" />
-          </div>
           <div className="flex items-center justify-center font-black text-3xl tracking-tight text-slate-900">
             <span>ZeForm</span>
-            <span className="text-indigo-600 text-4xl leading-none ml-0.5">*</span>
+            <span className="text-indigo-600 text-4xl font-black leading-none">.</span>
           </div>
           <p className="text-sm text-slate-500 mt-2">
             Sign in to create, manage, and monitor your forms

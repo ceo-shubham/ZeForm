@@ -233,9 +233,9 @@ export default function HomePage() {
       {/* Call to Action Banner */}
       <section className="py-16 bg-slate-900 text-white text-center">
         <div className="max-w-4xl mx-auto px-4">
-          <div className="inline-flex items-center gap-1.5 font-bold text-2xl mb-4">
+          <div className="inline-flex items-center font-bold text-2xl mb-4">
             <span>ZeForm</span>
-            <span className="text-indigo-400 text-3xl leading-none">*</span>
+            <span className="text-indigo-400 text-3xl font-black leading-none">.</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">
             Ready to launch your custom form link?

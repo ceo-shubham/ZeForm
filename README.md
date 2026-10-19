@@ -1,6 +1,6 @@
-# ZeForm* — Next-Generation Form & Quiz Platform
+# ZeForm. — Next-Generation Form & Quiz Platform
 
-> **Branding:** ZeForm*  
+> **Branding:** ZeForm.  
 > **Main Domain:** `zeform.zenstro.space`  
 > **Custom Subdomains:** `your-form.zeform.zenstro.space`  
 > **Master Admin:** `ceo.shubhampathak@gmail.com`
@@ -9,7 +9,7 @@
 
 ## 🌟 Overview & Key Features
 
-ZeForm* is a modern Google Forms alternative with built-in superpowers:
+ZeForm. is a modern Google Forms alternative with built-in superpowers:
 
 1. **Custom Subdomains (`your-form.zeform.zenstro.space`)**
    - Each creator can pick their own custom subdomain slug.

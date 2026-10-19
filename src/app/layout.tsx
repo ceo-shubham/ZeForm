@@ -4,7 +4,7 @@ import Providers from "@/components/Providers";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "ZeForm* - Modern Form Builder with Custom Subdomains & Auto Scoring",
+  title: "ZeForm. - Modern Form Builder with Custom Subdomains & Auto Scoring",
   description:
     "Build beautiful forms like Google Forms with custom subdomains (your-form.zeform.zenstro.space), automated expiration timers, instant quiz auto-scoring, and respondent Google tracking.",
   icons: {
@@ -26,7 +26,7 @@ export default function RootLayout({
           <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
             <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
               <div className="font-semibold text-slate-700">
-                ZeForm<span className="text-indigo-600 font-bold">*</span> &bull; Powered by Cloudflare &amp; Zenstro
+                ZeForm<span className="text-indigo-600 font-bold">.</span> &bull; Powered by Cloudflare &amp; Zenstro
               </div>
               <div className="flex items-center gap-4">
                 <span>Subdomain: <code className="text-indigo-600">*.zeform.zenstro.space</code></span>
