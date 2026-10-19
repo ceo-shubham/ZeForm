@@ -1,0 +1,127 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String         @unique
+  emailVerified DateTime?
+  image         String?
+  role          String         @default("USER") // "USER" or "ADMIN"
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  forms         Form[]
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Form {
+  id                   String         @id @default(cuid())
+  title                String         @default("Untitled Form")
+  description          String?
+  slug                 String         @unique // Subdomain: e.g. "my-survey" -> my-survey.zeform.zenstro.space
+  userId               String
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  isPublished          Boolean        @default(true)
+  isAcceptingResponses Boolean        @default(true)
+  expiresAt            DateTime?      // When set, form automatically closes after this date/time
+  requireGoogleLogin   Boolean        @default(false)
+  
+  // Quiz & auto scoring features
+  isQuiz               Boolean        @default(false)
+  showScoreAfterSubmit Boolean        @default(true)
+  
+  // Customizable confirmation/thank you page
+  thankYouTitle        String         @default("Thank You!")
+  thankYouMessage      String         @default("Your response has been recorded successfully.")
+  themeColor           String         @default("#4f46e5")
+  
+  questions            Question[]
+  responses            FormResponse[]
+  
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+}
+
+model Question {
+  id            String       @id @default(cuid())
+  formId        String
+  form          Form         @relation(fields: [formId], references: [id], onDelete: Cascade)
+  type          String       // "short_text", "paragraph", "multiple_choice", "checkboxes", "dropdown", "rating", "number", "date"
+  title         String
+  description   String?
+  isRequired    Boolean      @default(false)
+  options       String?      // JSON string of options ["Option 1", "Option 2"]
+  points        Int          @default(0) // Point value if isQuiz is true
+  correctAnswer String?      // JSON string or plain text of correct answer(s)
+  orderIndex    Int          @default(0)
+  answers       Answer[]
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model FormResponse {
+  id              String    @id @default(cuid())
+  formId          String
+  form            Form      @relation(fields: [formId], references: [id], onDelete: Cascade)
+  respondentEmail String?
+  respondentName  String?
+  totalScore      Int?
+  maxScore        Int?
+  submittedAt     DateTime  @default(now())
+  answers         Answer[]
+}
+
+model Answer {
+  id            String       @id @default(cuid())
+  responseId    String
+  response      FormResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  questionId    String
+  question      Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  value         String       // Answer text or JSON array string
+  pointsAwarded Int          @default(0)
+  isCorrect     Boolean?
+}
