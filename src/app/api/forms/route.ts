@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserFromRequest } from "@/lib/auth-edge";
 import { getFormsByUser, createForm, isSubdomainAvailable } from "@/lib/d1-store";
 import { slugify } from "@/lib/utils";
-import { createSubdomainDnsRecord } from "@/lib/cloudflare";
+import { createSubdomainDnsRecord, registerPagesCustomDomain } from "@/lib/cloudflare";
 
 export const runtime = "edge";
 
@@ -69,9 +69,12 @@ export async function POST(req: NextRequest) {
       ],
     });
 
-    // Attempt Cloudflare DNS auto-record in background
+    // Attempt Cloudflare DNS and Pages custom domain registration in background
     createSubdomainDnsRecord(finalSlug).catch((err) =>
       console.warn("Cloudflare DNS auto-record warning:", err)
+    );
+    registerPagesCustomDomain(finalSlug).catch((err) =>
+      console.warn("Cloudflare Pages custom domain warning:", err)
     );
 
     return NextResponse.json({ form }, { status: 201 });

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserFromRequest } from "@/lib/auth-edge";
 import { getFormById, updateForm, deleteForm, isSubdomainAvailable } from "@/lib/d1-store";
 import { isAdmin, isValidSubdomain, slugify } from "@/lib/utils";
-import { createSubdomainDnsRecord } from "@/lib/cloudflare";
+import { createSubdomainDnsRecord, registerPagesCustomDomain } from "@/lib/cloudflare";
 
 export const runtime = "edge";
 
@@ -78,6 +78,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
       // Register with Cloudflare if configured
       createSubdomainDnsRecord(updatedSlug).catch(() => {});
+      registerPagesCustomDomain(updatedSlug).catch(() => {});
     }
 
     const updated = await updateForm(id, {

@@ -149,3 +149,33 @@ export async function createSubdomainDnsRecord(subdomain: string, target = "zefo
     };
   }
 }
+
+/**
+ * Automatically registers the custom subdomain with Cloudflare Pages project
+ * This automatically provisions an SSL certificate and routes traffic to the form!
+ */
+export async function registerPagesCustomDomain(subdomain: string): Promise<boolean> {
+  const domainName = `${subdomain}.zeform.zenstro.space`;
+  const accountId = process.env.CF_ACCOUNT_ID || "3c62fd7b101cb45266bcca6237c80f58";
+  const authEmail = process.env.CF_AUTH_EMAIL || "ceo.shubhampathak@gmail.com";
+  const apiKey = process.env.CF_API_KEY;
+
+  if (!apiKey) return false;
+
+  try {
+    const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/pages/projects/zeform/domains`, {
+      method: "POST",
+      headers: {
+        "X-Auth-Email": authEmail,
+        "X-Auth-Key": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name: domainName }),
+    });
+
+    const data = await res.json();
+    return Boolean(data.success);
+  } catch {
+    return false;
+  }
+}
