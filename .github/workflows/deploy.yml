@@ -47,4 +47,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy .vercel/output/static --project-name=zeform --branch=main --commit-dirty=true --compatibility-flags=nodejs_compat
+          command: pages deploy .vercel/output/static --project-name=zeform --branch=main --commit-dirty=true
