@@ -54,7 +54,7 @@ export default function UserDashboard() {
   const [newTitle, setNewTitle] = useState("");
   const [newSlug, setNewSlug] = useState("");
   const [slugChecking, setSlugChecking] = useState(false);
-  const [slugStatus, setSlugStatus] = useState<{ available?: boolean; reason?: string } | null>(null);
+  const [slugStatus, setSlugStatus] = useState<{ available?: boolean; reason?: string; suggestions?: string[] } | null>(null);
   const [isQuiz, setIsQuiz] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -493,15 +493,43 @@ export default function UserDashboard() {
                   </p>
                 )}
                 {!slugChecking && slugStatus && (
-                  <div className="mt-1.5 text-xs flex items-center gap-1.5">
+                  <div className="mt-2 text-xs">
                     {slugStatus.available ? (
                       <span className="text-emerald-600 flex items-center gap-1 font-semibold">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Subdomain is available!
                       </span>
                     ) : (
-                      <span className="text-red-500 flex items-center gap-1 font-semibold">
-                        <XCircle className="w-3.5 h-3.5" /> {slugStatus.reason}
-                      </span>
+                      <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
+                        <div className="flex items-start gap-1.5 font-semibold text-xs leading-relaxed text-amber-800">
+                          <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                          <span>{slugStatus.reason}</span>
+                        </div>
+
+                        {slugStatus.suggestions && slugStatus.suggestions.length > 0 && (
+                          <div className="pt-2 border-t border-amber-200">
+                            <div className="text-[10px] font-bold text-amber-800 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-indigo-600" />
+                              <span>Available Suggestions (Click to select):</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {slugStatus.suggestions.map((sug) => (
+                                <button
+                                  key={sug}
+                                  type="button"
+                                  onClick={() => {
+                                    setNewSlug(sug);
+                                    setSlugStatus({ available: true, suggestions: [] });
+                                  }}
+                                  className="px-2.5 py-1 text-xs font-mono font-bold bg-white hover:bg-indigo-50 text-indigo-700 hover:text-indigo-900 border border-indigo-200 hover:border-indigo-400 rounded-lg shadow-2xs transition-all flex items-center gap-1"
+                                >
+                                  <span>{sug}</span>
+                                  <span className="text-[10px] text-emerald-600 font-extrabold">✓ Available</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
