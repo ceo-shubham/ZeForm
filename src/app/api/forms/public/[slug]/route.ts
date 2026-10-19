@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { getFormBySlug } from "@/lib/d1-store";
+
+export const runtime = "edge";
 
 interface Params {
   params: { slug: string };
@@ -10,19 +12,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { slug } = params;
 
-    const form = await prisma.form.findUnique({
-      where: { slug },
-      include: {
-        questions: {
-          orderBy: { orderIndex: "asc" },
-        },
-        user: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
+    const form = await getFormBySlug(slug);
 
     if (!form || !form.isPublished) {
       return NextResponse.json({ error: "Form not found or unpublished" }, { status: 404 });
@@ -48,8 +38,8 @@ export async function GET(req: NextRequest, { params }: Params) {
       });
     }
 
-    // Sanitize questions so respondents cannot see the correct answers in network dev tools
-    const sanitizedQuestions = form.questions.map((q) => {
+    // Sanitize questions so respondents cannot see correct answers in network tools
+    const sanitizedQuestions = (form.questions || []).map((q) => {
       let parsedOptions = null;
       if (q.options) {
         try {
@@ -77,7 +67,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         title: form.title,
         description: form.description,
         slug: form.slug,
-        creatorName: form.user.name || "Anonymous",
+        creatorName: "Form Creator",
         requireGoogleLogin: form.requireGoogleLogin,
         isQuiz: form.isQuiz,
         themeColor: form.themeColor,

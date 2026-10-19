@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSession, signIn } from "next-auth/react";
+import { useSession, signIn } from "@/components/Providers";
 import { 
   CheckCircle2, 
   XCircle, 
@@ -241,7 +241,7 @@ export default function PublicFormView({ slug }: { slug: string }) {
             The creator of <strong>{form.title}</strong> requires respondents to verify their Google identity before submitting.
           </p>
           <button
-            onClick={() => signIn("google-clients", { callbackUrl: window.location.href }).catch(() => signIn("google", { callbackUrl: window.location.href }))}
+            onClick={() => signIn("google-clients", { callbackUrl: window.location.href })}
             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-md transition-all"
           >
             <LogIn className="w-4 h-4" />

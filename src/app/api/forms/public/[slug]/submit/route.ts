@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { getSessionUserFromRequest } from "@/lib/auth-edge";
+import { getFormBySlug, submitFormResponse } from "@/lib/d1-store";
+
+export const runtime = "edge";
 
 interface Params {
   params: { slug: string };
@@ -13,12 +14,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const body = await req.json();
     const { answers, respondentEmail: providedEmail, respondentName: providedName } = body;
 
-    const form = await prisma.form.findUnique({
-      where: { slug },
-      include: {
-        questions: true,
-      },
-    });
+    const form = await getFormBySlug(slug);
 
     if (!form || !form.isPublished) {
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
@@ -33,123 +29,42 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     // Check if Google Login was required
-    const session = await getServerSession(authOptions);
-    let capturedEmail = session?.user?.email || providedEmail || null;
-    let capturedName = session?.user?.name || providedName || null;
+    const sessionUser = await getSessionUserFromRequest(req);
+    let capturedEmail = sessionUser?.email || providedEmail || null;
+    let capturedName = sessionUser?.name || providedName || null;
 
-    if (form.requireGoogleLogin && !session?.user?.email) {
+    if (form.requireGoogleLogin && !sessionUser?.email) {
       return NextResponse.json(
         { error: "Google Sign-in is required to submit this form" },
         { status: 403 }
       );
     }
 
-    // Process answers and calculate quiz scores if enabled
-    let totalScore = 0;
-    let maxScore = 0;
-    const answerRecords: Array<{
-      questionId: string;
-      value: string;
-      pointsAwarded: number;
-      isCorrect: boolean | null;
-    }> = [];
-
-    for (const question of form.questions) {
-      const rawAnswer = answers?.[question.id];
-
-      // Check required validation
-      if (question.isRequired && (rawAnswer === undefined || rawAnswer === null || rawAnswer === "")) {
+    // Format answers array
+    const answersArray: { questionId: string; value: any }[] = [];
+    for (const q of form.questions || []) {
+      const val = answers?.[q.id];
+      if (q.isRequired && (val === undefined || val === null || val === "")) {
         return NextResponse.json(
-          { error: `Field "${question.title}" is required.` },
+          { error: `Field "${q.title}" is required.` },
           { status: 400 }
         );
       }
-
-      let stringValue = "";
-      if (Array.isArray(rawAnswer)) {
-        stringValue = JSON.stringify(rawAnswer);
-      } else if (rawAnswer !== undefined && rawAnswer !== null) {
-        stringValue = String(rawAnswer).trim();
-      }
-
-      let pointsAwarded = 0;
-      let isCorrect: boolean | null = null;
-
-      if (form.isQuiz) {
-        maxScore += question.points;
-
-        if (question.correctAnswer) {
-          try {
-            // Check if correct answer is a JSON array (for checkboxes)
-            const parsedCorrect = JSON.parse(question.correctAnswer);
-            if (Array.isArray(parsedCorrect)) {
-              let parsedUserAnswer: string[] = [];
-              try {
-                parsedUserAnswer = Array.isArray(rawAnswer) ? rawAnswer : JSON.parse(stringValue);
-              } catch {
-                parsedUserAnswer = [stringValue];
-              }
-
-              // Check set equality
-              const setA = new Set(parsedCorrect.map((s) => String(s).trim().toLowerCase()));
-              const setB = new Set(parsedUserAnswer.map((s) => String(s).trim().toLowerCase()));
-              const match = setA.size === setB.size && Array.from(setA).every((val) => setB.has(val));
-
-              if (match) {
-                pointsAwarded = question.points;
-                isCorrect = true;
-              } else {
-                isCorrect = false;
-              }
-            } else {
-              // Direct string comparison
-              if (stringValue.toLowerCase() === String(parsedCorrect).trim().toLowerCase()) {
-                pointsAwarded = question.points;
-                isCorrect = true;
-              } else {
-                isCorrect = false;
-              }
-            }
-          } catch {
-            // Plain text comparison
-            if (stringValue.toLowerCase() === question.correctAnswer.trim().toLowerCase()) {
-              pointsAwarded = question.points;
-              isCorrect = true;
-            } else {
-              isCorrect = false;
-            }
-          }
-          totalScore += pointsAwarded;
-        }
-      }
-
-      answerRecords.push({
-        questionId: question.id,
-        value: stringValue,
-        pointsAwarded,
-        isCorrect,
-      });
+      answersArray.push({ questionId: q.id, value: val ?? "" });
     }
 
-    // Save response to database
-    const savedResponse = await prisma.formResponse.create({
-      data: {
-        formId: form.id,
-        respondentEmail: capturedEmail,
-        respondentName: capturedName,
-        totalScore: form.isQuiz ? totalScore : null,
-        maxScore: form.isQuiz ? maxScore : null,
-        answers: {
-          create: answerRecords,
-        },
-      },
+    const result = await submitFormResponse({
+      formId: form.id,
+      respondentEmail: capturedEmail,
+      respondentName: capturedName,
+      answers: answersArray,
     });
 
     return NextResponse.json({
       success: true,
-      responseId: savedResponse.id,
-      totalScore: form.isQuiz ? totalScore : null,
-      maxScore: form.isQuiz ? maxScore : null,
+      responseId: result.responseId,
+      totalScore: form.isQuiz ? result.totalScore : null,
+      maxScore: form.isQuiz ? result.maxScore : null,
       showScoreAfterSubmit: form.showScoreAfterSubmit,
       isQuiz: form.isQuiz,
       thankYouTitle: form.thankYouTitle,

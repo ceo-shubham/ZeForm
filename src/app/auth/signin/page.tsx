@@ -1,11 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn } from "@/components/Providers";
+import { useRouter } from "next/navigation";
 import { FileText, ShieldCheck, User, ArrowRight, Sparkles } from "lucide-react";
 import { ADMIN_EMAIL } from "@/lib/utils";
 
+export const runtime = "edge";
+
 export default function SignInPage() {
+  const router = useRouter();
   const [customEmail, setCustomEmail] = useState("");
   const [customName, setCustomName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,22 +21,36 @@ export default function SignInPage() {
 
   const handleAdminQuickSignIn = async () => {
     setLoading(true);
-    await signIn("credentials", {
-      email: ADMIN_EMAIL,
-      name: "Shubham Pathak (CEO)",
-      callbackUrl: "/dashboard/admin",
-    });
+    try {
+      const res = await fetch("/api/auth/quick-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: ADMIN_EMAIL, name: "Shubham Pathak (CEO)" }),
+      });
+      if (res.ok) {
+        window.location.href = "/dashboard/admin";
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCustomSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customEmail) return;
     setLoading(true);
-    await signIn("credentials", {
-      email: customEmail,
-      name: customName || customEmail.split("@")[0],
-      callbackUrl: "/dashboard",
-    });
+    try {
+      const res = await fetch("/api/auth/quick-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: customEmail, name: customName || customEmail.split("@")[0] }),
+      });
+      if (res.ok) {
+        window.location.href = "/dashboard";
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

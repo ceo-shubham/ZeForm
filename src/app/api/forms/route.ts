@@ -1,39 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import { slugify, isValidSubdomain } from "@/lib/utils";
+import { getSessionUserFromRequest } from "@/lib/auth-edge";
+import { getFormsByUser, createForm, isSubdomainAvailable } from "@/lib/d1-store";
+import { slugify } from "@/lib/utils";
 import { createSubdomainDnsRecord } from "@/lib/cloudflare";
+
+export const runtime = "edge";
 
 // GET /api/forms - Get user's forms
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getSessionUserFromRequest(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email.toLowerCase() },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const forms = await prisma.form.findMany({
-      where: { userId: user.id },
-      include: {
-        _count: {
-          select: {
-            responses: true,
-            questions: true,
-          },
-        },
-      },
-      orderBy: { updatedAt: "desc" },
-    });
-
+    const forms = await getFormsByUser(user.id);
     return NextResponse.json({ forms });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -43,17 +24,9 @@ export async function GET(req: NextRequest) {
 // POST /api/forms - Create a new form
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email.toLowerCase() },
-    });
-
+    const user = await getSessionUserFromRequest(req);
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json().catch(() => ({}));
@@ -67,43 +40,36 @@ export async function POST(req: NextRequest) {
 
     let finalSlug = baseSlug;
     let counter = 1;
-    while (await prisma.form.findUnique({ where: { slug: finalSlug } })) {
+    while (!(await isSubdomainAvailable(finalSlug))) {
       finalSlug = `${baseSlug}-${counter}`;
       counter++;
     }
 
-    const form = await prisma.form.create({
-      data: {
-        title,
-        description: body.description || "Please fill out this form.",
-        slug: finalSlug,
-        userId: user.id,
-        isPublished: true,
-        isAcceptingResponses: true,
-        isQuiz: Boolean(body.isQuiz),
-        questions: {
-          create: [
-            {
-              title: "What is your name?",
-              type: "short_text",
-              isRequired: true,
-              orderIndex: 0,
-            },
-            {
-              title: "What is your feedback or message?",
-              type: "paragraph",
-              isRequired: false,
-              orderIndex: 1,
-            },
-          ],
+    const form = await createForm({
+      userId: user.id,
+      title,
+      description: body.description || "Please fill out this form.",
+      slug: finalSlug,
+      isPublished: true,
+      isAcceptingResponses: true,
+      isQuiz: Boolean(body.isQuiz),
+      questions: [
+        {
+          title: "What is your name?",
+          type: "short_text",
+          isRequired: true,
+          orderIndex: 0,
         },
-      },
-      include: {
-        questions: true,
-      },
+        {
+          title: "What is your feedback or message?",
+          type: "paragraph",
+          isRequired: false,
+          orderIndex: 1,
+        },
+      ],
     });
 
-    // Optionally attempt Cloudflare CNAME registration in the background
+    // Attempt Cloudflare DNS auto-record in background
     createSubdomainDnsRecord(finalSlug).catch((err) =>
       console.warn("Cloudflare DNS auto-record warning:", err)
     );

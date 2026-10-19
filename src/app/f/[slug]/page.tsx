@@ -1,4 +1,5 @@
 import React from "react";
+export const runtime = "edge";
 import PublicFormView from "@/components/PublicFormView";
 
 interface Props {

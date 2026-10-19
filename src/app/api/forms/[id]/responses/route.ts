@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { getSessionUserFromRequest } from "@/lib/auth-edge";
+import { getFormById, getFormResponses } from "@/lib/d1-store";
 import { isAdmin } from "@/lib/utils";
+
+export const runtime = "edge";
 
 interface Params {
   params: { id: string };
@@ -11,44 +12,24 @@ interface Params {
 // GET /api/forms/[id]/responses
 export async function GET(req: NextRequest, { params }: Params) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getSessionUserFromRequest(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = params;
-    const userEmail = session.user.email.toLowerCase();
-    const userIsAdmin = isAdmin(userEmail);
+    const userIsAdmin = isAdmin(user.email);
 
-    const form = await prisma.form.findUnique({
-      where: { id },
-      include: {
-        user: true,
-        questions: {
-          orderBy: { orderIndex: "asc" },
-        },
-      },
-    });
-
+    const form = await getFormById(id);
     if (!form) {
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
 
-    if (form.user.email !== userEmail && !userIsAdmin) {
+    if (form.userId !== user.id && !userIsAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const responses = await prisma.formResponse.findMany({
-      where: { formId: id },
-      include: {
-        answers: {
-          include: {
-            question: true,
-          },
-        },
-      },
-      orderBy: { submittedAt: "desc" },
-    });
+    const responses = await getFormResponses(id);
 
     return NextResponse.json({
       form: {

@@ -1,40 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { getSessionUserFromRequest } from "@/lib/auth-edge";
+import { getAllForms } from "@/lib/d1-store";
 import { isAdmin } from "@/lib/utils";
+
+export const runtime = "edge";
 
 // GET /api/admin/forms - Admin only route to list all platform forms
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    const userEmail = session?.user?.email?.toLowerCase();
+    const user = await getSessionUserFromRequest(req);
+    const userEmail = user?.email?.toLowerCase();
 
-    if (!session || !isAdmin(userEmail)) {
+    if (!user || !isAdmin(userEmail)) {
       return NextResponse.json(
         { error: "Access denied. Only the platform administrator (ceo.shubhampathak@gmail.com) can access this resource." },
         { status: 403 }
       );
     }
 
-    const forms = await prisma.form.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        _count: {
-          select: {
-            responses: true,
-            questions: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const forms = await getAllForms();
 
     return NextResponse.json({ forms });
   } catch (error: any) {

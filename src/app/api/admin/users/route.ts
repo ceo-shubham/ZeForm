@@ -1,65 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { getSessionUserFromRequest } from "@/lib/auth-edge";
+import { getAllUsers } from "@/lib/d1-store";
 import { isAdmin } from "@/lib/utils";
+
+export const runtime = "edge";
 
 // GET /api/admin/users - Admin only route to list all platform users
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    const userEmail = session?.user?.email?.toLowerCase();
+    const user = await getSessionUserFromRequest(req);
+    const userEmail = user?.email?.toLowerCase();
 
-    if (!session || !isAdmin(userEmail)) {
+    if (!user || !isAdmin(userEmail)) {
       return NextResponse.json(
         { error: "Access denied. Only the platform administrator (ceo.shubhampathak@gmail.com) can access this resource." },
         { status: 403 }
       );
     }
 
-    const users = await prisma.user.findMany({
-      include: {
-        forms: {
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            isAcceptingResponses: true,
-            createdAt: true,
-            _count: {
-              select: {
-                responses: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            forms: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const users = await getAllUsers();
 
-    const formattedUsers = users.map((u) => {
-      const totalResponsesReceived = u.forms.reduce(
-        (acc, form) => acc + (form._count?.responses || 0),
-        0
-      );
-
-      return {
-        id: u.id,
-        email: u.email,
-        name: u.name,
-        image: u.image,
-        role: u.role,
-        createdAt: u.createdAt,
-        formsCount: u._count.forms,
-        totalResponsesReceived,
-        forms: u.forms,
-      };
-    });
+    const formattedUsers = users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      image: u.image,
+      role: u.role,
+      createdAt: u.createdAt,
+      formsCount: Number(u.formCount || 0),
+      forms: [],
+    }));
 
     return NextResponse.json({ users: formattedUsers });
   } catch (error: any) {

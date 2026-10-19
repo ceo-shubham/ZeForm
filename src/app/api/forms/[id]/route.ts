@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { getSessionUserFromRequest } from "@/lib/auth-edge";
+import { getFormById, updateForm, deleteForm, isSubdomainAvailable } from "@/lib/d1-store";
 import { isAdmin, isValidSubdomain, slugify } from "@/lib/utils";
 import { createSubdomainDnsRecord } from "@/lib/cloudflare";
+
+export const runtime = "edge";
 
 interface Params {
   params: { id: string };
@@ -12,41 +13,20 @@ interface Params {
 // GET /api/forms/[id]
 export async function GET(req: NextRequest, { params }: Params) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getSessionUserFromRequest(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = params;
-    const userEmail = session.user.email.toLowerCase();
-    const userIsAdmin = isAdmin(userEmail);
+    const userIsAdmin = isAdmin(user.email);
 
-    const form = await prisma.form.findUnique({
-      where: { id },
-      include: {
-        questions: {
-          orderBy: { orderIndex: "asc" },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        _count: {
-          select: {
-            responses: true,
-          },
-        },
-      },
-    });
-
+    const form = await getFormById(id);
     if (!form) {
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
 
-    if (form.user.email !== userEmail && !userIsAdmin) {
+    if (form.userId !== user.id && !userIsAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -59,25 +39,20 @@ export async function GET(req: NextRequest, { params }: Params) {
 // PUT /api/forms/[id]
 export async function PUT(req: NextRequest, { params }: Params) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getSessionUserFromRequest(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = params;
-    const userEmail = session.user.email.toLowerCase();
-    const userIsAdmin = isAdmin(userEmail);
+    const userIsAdmin = isAdmin(user.email);
 
-    const existingForm = await prisma.form.findUnique({
-      where: { id },
-      include: { user: true },
-    });
-
+    const existingForm = await getFormById(id);
     if (!existingForm) {
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
 
-    if (existingForm.user.email !== userEmail && !userIsAdmin) {
+    if (existingForm.userId !== user.id && !userIsAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -92,14 +67,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
         return NextResponse.json({ error: validation.error }, { status: 400 });
       }
 
-      const duplicate = await prisma.form.findFirst({
-        where: {
-          slug: formattedSlug,
-          NOT: { id },
-        },
-      });
-
-      if (duplicate) {
+      const available = await isSubdomainAvailable(formattedSlug, id);
+      if (!available) {
         return NextResponse.json(
           { error: `Subdomain "${formattedSlug}" is already taken.` },
           { status: 400 }
@@ -111,64 +80,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
       createSubdomainDnsRecord(updatedSlug).catch(() => {});
     }
 
-    // Process questions update if provided
-    if (Array.isArray(body.questions)) {
-      // Delete existing questions not in new list or replace
-      await prisma.question.deleteMany({
-        where: { formId: id },
-      });
-
-      for (let i = 0; i < body.questions.length; i++) {
-        const q = body.questions[i];
-        await prisma.question.create({
-          data: {
-            formId: id,
-            title: q.title || "Untitled Question",
-            description: q.description || null,
-            type: q.type || "short_text",
-            isRequired: Boolean(q.isRequired),
-            options: q.options ? JSON.stringify(q.options) : null,
-            points: Number(q.points || 0),
-            correctAnswer: q.correctAnswer ? (typeof q.correctAnswer === "string" ? q.correctAnswer : JSON.stringify(q.correctAnswer)) : null,
-            orderIndex: i,
-          },
-        });
-      }
-    }
-
-    const updatedForm = await prisma.form.update({
-      where: { id },
-      data: {
-        title: body.title !== undefined ? body.title : existingForm.title,
-        description: body.description !== undefined ? body.description : existingForm.description,
-        slug: updatedSlug,
-        isPublished: body.isPublished !== undefined ? Boolean(body.isPublished) : existingForm.isPublished,
-        isAcceptingResponses:
-          body.isAcceptingResponses !== undefined
-            ? Boolean(body.isAcceptingResponses)
-            : existingForm.isAcceptingResponses,
-        expiresAt: body.expiresAt ? new Date(body.expiresAt) : body.expiresAt === null ? null : existingForm.expiresAt,
-        requireGoogleLogin:
-          body.requireGoogleLogin !== undefined
-            ? Boolean(body.requireGoogleLogin)
-            : existingForm.requireGoogleLogin,
-        isQuiz: body.isQuiz !== undefined ? Boolean(body.isQuiz) : existingForm.isQuiz,
-        showScoreAfterSubmit:
-          body.showScoreAfterSubmit !== undefined
-            ? Boolean(body.showScoreAfterSubmit)
-            : existingForm.showScoreAfterSubmit,
-        thankYouTitle: body.thankYouTitle || existingForm.thankYouTitle,
-        thankYouMessage: body.thankYouMessage || existingForm.thankYouMessage,
-        themeColor: body.themeColor || existingForm.themeColor,
-      },
-      include: {
-        questions: {
-          orderBy: { orderIndex: "asc" },
-        },
-      },
+    const updated = await updateForm(id, {
+      ...body,
+      slug: updatedSlug,
     });
 
-    return NextResponse.json({ form: updatedForm });
+    return NextResponse.json({ form: updated });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -177,32 +94,24 @@ export async function PUT(req: NextRequest, { params }: Params) {
 // DELETE /api/forms/[id]
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const user = await getSessionUserFromRequest(req);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = params;
-    const userEmail = session.user.email.toLowerCase();
-    const userIsAdmin = isAdmin(userEmail);
+    const userIsAdmin = isAdmin(user.email);
 
-    const existingForm = await prisma.form.findUnique({
-      where: { id },
-      include: { user: true },
-    });
-
+    const existingForm = await getFormById(id);
     if (!existingForm) {
       return NextResponse.json({ error: "Form not found" }, { status: 404 });
     }
 
-    if (existingForm.user.email !== userEmail && !userIsAdmin) {
+    if (existingForm.userId !== user.id && !userIsAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await prisma.form.delete({
-      where: { id },
-    });
-
+    await deleteForm(id);
     return NextResponse.json({ success: true, message: "Form deleted" });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

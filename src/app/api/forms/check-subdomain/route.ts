@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { isSubdomainAvailable } from "@/lib/d1-store";
 import { isValidSubdomain, slugify, MAIN_DOMAIN, RESERVED_SUBDOMAINS } from "@/lib/utils";
+
+export const runtime = "edge";
 
 // GET /api/forms/check-subdomain?slug=my-form&formId=optional
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const rawSlug = searchParams.get("slug") || "";
-    const currentFormId = searchParams.get("formId");
+    const currentFormId = searchParams.get("formId") || undefined;
 
     const slug = slugify(rawSlug);
     const validation = isValidSubdomain(slug);
@@ -21,15 +23,9 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const existing = await prisma.form.findFirst({
-      where: {
-        slug,
-        ...(currentFormId ? { NOT: { id: currentFormId } } : {}),
-      },
-    });
+    const available = await isSubdomainAvailable(slug, currentFormId);
 
-    if (existing) {
-      // Generate intelligent alternative suggestions
+    if (!available) {
       const candidateList = [
         `${slug}-2026`,
         `${slug}-form`,
@@ -40,22 +36,16 @@ export async function GET(req: NextRequest) {
         `${slug}-${Math.floor(100 + Math.random() * 899)}`,
       ];
 
-      // Filter candidates that are valid and not reserved
-      const validCandidates = candidateList.filter((c) => {
-        const v = isValidSubdomain(c);
-        return v.valid && !RESERVED_SUBDOMAINS.includes(c);
-      });
-
-      // Check which candidates are already taken in the database
-      const takenForms = await prisma.form.findMany({
-        where: {
-          slug: { in: validCandidates },
-        },
-        select: { slug: true },
-      });
-
-      const takenSlugs = new Set(takenForms.map((f) => f.slug));
-      const freeSuggestions = validCandidates.filter((c) => !takenSlugs.has(c)).slice(0, 4);
+      const freeSuggestions: string[] = [];
+      for (const cand of candidateList) {
+        if (!RESERVED_SUBDOMAINS.includes(cand) && isValidSubdomain(cand).valid) {
+          const isFree = await isSubdomainAvailable(cand);
+          if (isFree) {
+            freeSuggestions.push(cand);
+            if (freeSuggestions.length >= 4) break;
+          }
+        }
+      }
 
       return NextResponse.json({
         available: false,
