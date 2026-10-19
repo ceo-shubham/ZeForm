@@ -6,11 +6,25 @@ import { ADMIN_EMAIL } from "@/lib/utils";
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    // 1. Main ZeForm Google Login (For Form Creators & Master Admin ceo.shubhampathak@gmail.com)
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [
           GoogleProvider({
+            id: "google",
+            name: "Google (ZeForm)",
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
+    // 2. ZeForm Clients Google Login (Specifically for Respondents filling out Client Forms)
+    ...(process.env.GOOGLE_CLIENTS_CLIENT_ID && process.env.GOOGLE_CLIENTS_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            id: "google-clients",
+            name: "Google (ZeForm Clients)",
+            clientId: process.env.GOOGLE_CLIENTS_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENTS_CLIENT_SECRET,
           }),
         ]
       : []),
