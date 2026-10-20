@@ -26,7 +26,6 @@ export async function d1Query<T = any>(sql: string, params: any[] = []): Promise
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ sql, params }),
-      cache: "no-store",
     });
 
     if (!res.ok) {
