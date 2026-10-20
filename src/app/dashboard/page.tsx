@@ -36,6 +36,7 @@ interface FormItem {
   expiresAt: string | null;
   isQuiz: boolean;
   createdAt: string;
+  updatedAt?: string;
   _count: {
     responses: number;
     questions: number;
@@ -138,8 +139,19 @@ export default function UserDashboard() {
         body: JSON.stringify({ isAcceptingResponses: updatedStatus }),
       });
       if (res.ok) {
+        const data = await res.json();
+        const updatedForm = data.form;
         setForms((prev) =>
-          prev.map((f) => (f.id === form.id ? { ...f, isAcceptingResponses: updatedStatus } : f))
+          prev.map((f) =>
+            f.id === form.id
+              ? {
+                  ...f,
+                  ...(updatedForm || {}),
+                  isAcceptingResponses: updatedStatus,
+                  updatedAt: updatedForm?.updatedAt || new Date().toISOString(),
+                }
+              : f
+          )
         );
       }
     } catch (err) {
@@ -170,8 +182,15 @@ export default function UserDashboard() {
 
   const totalResponses = forms.reduce((acc, f) => acc + (f._count?.responses || 0), 0);
   const activeFormsCount = forms.filter((f) => {
-    const notExpired = !f.expiresAt || new Date() < new Date(f.expiresAt);
-    return f.isAcceptingResponses && notExpired;
+    const hasPassedTimer = Boolean(f.expiresAt && new Date() > new Date(f.expiresAt));
+    const isReopened = Boolean(
+      hasPassedTimer &&
+        f.updatedAt &&
+        f.expiresAt &&
+        new Date(f.updatedAt).getTime() > new Date(f.expiresAt).getTime()
+    );
+    const isExpired = hasPassedTimer && !isReopened;
+    return f.isAcceptingResponses && !isExpired;
   }).length;
 
   if (status === "loading" || loading) {
@@ -279,7 +298,14 @@ export default function UserDashboard() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {forms.map((form) => {
-            const isExpired = form.expiresAt && new Date() > new Date(form.expiresAt);
+            const hasPassedTimer = Boolean(form.expiresAt && new Date() > new Date(form.expiresAt));
+            const isReopened = Boolean(
+              hasPassedTimer &&
+                form.updatedAt &&
+                form.expiresAt &&
+                new Date(form.updatedAt).getTime() > new Date(form.expiresAt).getTime()
+            );
+            const isExpired = hasPassedTimer && !isReopened;
             const isLive = form.isAcceptingResponses && !isExpired;
             const fullSubdomainUrl = `https://${form.slug}.${MAIN_DOMAIN}`;
             const directPathUrl = `/f/${form.slug}`;
@@ -361,8 +387,20 @@ export default function UserDashboard() {
                     <div className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
                       <span>
-                        {isExpired ? "Closed automatically on:" : "Scheduled to close on:"}{" "}
-                        <strong className="text-slate-700">{formatDateTime(form.expiresAt)}</strong>
+                        {isExpired ? (
+                          <>
+                            Closed on: <strong className="text-slate-700">{formatDateTime(form.expiresAt)}</strong>
+                          </>
+                        ) : isReopened && isLive ? (
+                          <>
+                            Record deadline: <strong className="text-slate-700">{formatDateTime(form.expiresAt)}</strong>{" "}
+                            <span className="text-emerald-700 font-semibold">(Live &amp; Accepting)</span>
+                          </>
+                        ) : (
+                          <>
+                            Scheduled to close on: <strong className="text-slate-700">{formatDateTime(form.expiresAt)}</strong>
+                          </>
+                        )}
                       </span>
                     </div>
                   )}

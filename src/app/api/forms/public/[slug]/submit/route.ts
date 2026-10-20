@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUserFromRequest } from "@/lib/auth-edge";
-import { getFormBySlug, submitFormResponse } from "@/lib/d1-store";
+import { getFormBySlug, submitFormResponse, isFormExpired } from "@/lib/d1-store";
 
 export const runtime = "edge";
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Form is no longer accepting responses" }, { status: 400 });
     }
 
-    if (form.expiresAt && new Date() > new Date(form.expiresAt)) {
+    if (isFormExpired(form)) {
       return NextResponse.json({ error: "This form has expired" }, { status: 400 });
     }
 

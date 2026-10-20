@@ -129,6 +129,24 @@ export async function isSubdomainAvailable(slug: string, excludeFormId?: string)
 }
 
 // 3. Form operations
+export function isFormExpired(form: { expiresAt?: string | null; updatedAt?: string; isAcceptingResponses?: any }): boolean {
+  if (!form.expiresAt) return false;
+  const expDate = new Date(form.expiresAt).getTime();
+  const nowDate = Date.now();
+  if (nowDate <= expDate) return false;
+
+  // If expired, check if it was explicitly updated/reopened after expiresAt
+  if (form.updatedAt) {
+    const upDate = new Date(form.updatedAt).getTime();
+    if (upDate > expDate) {
+      // Creator explicitly reopened the form after expiration timer passed
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export async function getFormsByUser(userId: string): Promise<DBForm[]> {
   const forms = await d1Query<DBForm>(
     `SELECT f.*, COUNT(r.id) as responseCount
@@ -140,15 +158,23 @@ export async function getFormsByUser(userId: string): Promise<DBForm[]> {
     [userId]
   );
 
-  return forms.map((f: any) => ({
-    ...f,
-    isPublished: Boolean(f.isPublished),
-    isAcceptingResponses: Boolean(f.isAcceptingResponses),
-    requireGoogleLogin: Boolean(f.requireGoogleLogin),
-    isQuiz: Boolean(f.isQuiz),
-    showScoreAfterSubmit: Boolean(f.showScoreAfterSubmit),
-    _count: { responses: Number(f.responseCount || 0) },
-  }));
+  return forms.map((f: any) => {
+    let accepting = Boolean(f.isAcceptingResponses);
+    if (accepting && isFormExpired(f)) {
+      accepting = false;
+      d1Execute("UPDATE Form SET isAcceptingResponses = 0 WHERE id = ?", [f.id]).catch(() => {});
+    }
+
+    return {
+      ...f,
+      isPublished: Boolean(f.isPublished),
+      isAcceptingResponses: accepting,
+      requireGoogleLogin: Boolean(f.requireGoogleLogin),
+      isQuiz: Boolean(f.isQuiz),
+      showScoreAfterSubmit: Boolean(f.showScoreAfterSubmit),
+      _count: { responses: Number(f.responseCount || 0) },
+    };
+  });
 }
 
 export async function getAllForms(): Promise<DBForm[]> {
@@ -161,16 +187,24 @@ export async function getAllForms(): Promise<DBForm[]> {
      ORDER BY f.createdAt DESC`
   );
 
-  return forms.map((f: any) => ({
-    ...f,
-    isPublished: Boolean(f.isPublished),
-    isAcceptingResponses: Boolean(f.isAcceptingResponses),
-    requireGoogleLogin: Boolean(f.requireGoogleLogin),
-    isQuiz: Boolean(f.isQuiz),
-    showScoreAfterSubmit: Boolean(f.showScoreAfterSubmit),
-    user: { id: f.userId, name: f.userName, email: f.userEmail },
-    _count: { responses: Number(f.responseCount || 0) },
-  }));
+  return forms.map((f: any) => {
+    let accepting = Boolean(f.isAcceptingResponses);
+    if (accepting && isFormExpired(f)) {
+      accepting = false;
+      d1Execute("UPDATE Form SET isAcceptingResponses = 0 WHERE id = ?", [f.id]).catch(() => {});
+    }
+
+    return {
+      ...f,
+      isPublished: Boolean(f.isPublished),
+      isAcceptingResponses: accepting,
+      requireGoogleLogin: Boolean(f.requireGoogleLogin),
+      isQuiz: Boolean(f.isQuiz),
+      showScoreAfterSubmit: Boolean(f.showScoreAfterSubmit),
+      user: { id: f.userId, name: f.userName, email: f.userEmail },
+      _count: { responses: Number(f.responseCount || 0) },
+    };
+  });
 }
 
 export async function getFormById(id: string): Promise<DBForm | null> {
@@ -178,6 +212,12 @@ export async function getFormById(id: string): Promise<DBForm | null> {
   if (!forms.length) return null;
 
   const form = forms[0];
+  let accepting = Boolean(form.isAcceptingResponses);
+  if (accepting && isFormExpired(form)) {
+    accepting = false;
+    d1Execute("UPDATE Form SET isAcceptingResponses = 0 WHERE id = ?", [form.id]).catch(() => {});
+  }
+
   const questions = await d1Query<DBQuestion>(
     "SELECT * FROM Question WHERE formId = ? ORDER BY orderIndex ASC, createdAt ASC",
     [id]
@@ -186,7 +226,7 @@ export async function getFormById(id: string): Promise<DBForm | null> {
   return {
     ...form,
     isPublished: Boolean(form.isPublished),
-    isAcceptingResponses: Boolean(form.isAcceptingResponses),
+    isAcceptingResponses: accepting,
     requireGoogleLogin: Boolean(form.requireGoogleLogin),
     isQuiz: Boolean(form.isQuiz),
     showScoreAfterSubmit: Boolean(form.showScoreAfterSubmit),
@@ -203,6 +243,12 @@ export async function getFormBySlug(slug: string): Promise<DBForm | null> {
   if (!forms.length) return null;
 
   const form = forms[0];
+  let accepting = Boolean(form.isAcceptingResponses);
+  if (accepting && isFormExpired(form)) {
+    accepting = false;
+    d1Execute("UPDATE Form SET isAcceptingResponses = 0 WHERE id = ?", [form.id]).catch(() => {});
+  }
+
   const questions = await d1Query<DBQuestion>(
     "SELECT * FROM Question WHERE formId = ? ORDER BY orderIndex ASC, createdAt ASC",
     [form.id]
@@ -211,7 +257,7 @@ export async function getFormBySlug(slug: string): Promise<DBForm | null> {
   return {
     ...form,
     isPublished: Boolean(form.isPublished),
-    isAcceptingResponses: Boolean(form.isAcceptingResponses),
+    isAcceptingResponses: accepting,
     requireGoogleLogin: Boolean(form.requireGoogleLogin),
     isQuiz: Boolean(form.isQuiz),
     showScoreAfterSubmit: Boolean(form.showScoreAfterSubmit),

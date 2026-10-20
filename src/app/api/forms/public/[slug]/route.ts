@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFormBySlug } from "@/lib/d1-store";
+import { getFormBySlug, isFormExpired } from "@/lib/d1-store";
 
 export const runtime = "edge";
 
@@ -18,21 +18,23 @@ export async function GET(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Form not found or unpublished" }, { status: 404 });
     }
 
-    // Check if form is manually closed
+    // Check if form is closed (either manually or timed out)
     if (!form.isAcceptingResponses) {
       return NextResponse.json({
         isClosed: true,
-        reason: "This form is no longer accepting responses.",
+        reason: form.expiresAt && isFormExpired(form)
+          ? `This form expired on ${new Date(form.expiresAt).toLocaleString()}.`
+          : "This form is no longer accepting responses.",
         title: form.title,
         description: form.description,
       });
     }
 
-    // Check if form has expired by scheduled date & time
-    if (form.expiresAt && new Date() > new Date(form.expiresAt)) {
+    // Check if form has expired by scheduled date & time (and not manually reopened)
+    if (isFormExpired(form)) {
       return NextResponse.json({
         isClosed: true,
-        reason: `This form expired on ${new Date(form.expiresAt).toLocaleString()}.`,
+        reason: `This form expired on ${new Date(form.expiresAt!).toLocaleString()}.`,
         title: form.title,
         description: form.description,
       });
