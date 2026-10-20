@@ -12,7 +12,8 @@ import {
   Zap, 
   Sparkles,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Check
 } from "lucide-react";
 
 interface PublicQuestion {
@@ -253,64 +254,82 @@ export default function PublicFormView({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/70 py-10 px-4 sm:px-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#ede7f6]/60 py-10 px-4 sm:px-6">
+      <div className="max-w-2xl mx-auto space-y-4">
         {/* Form Header Card */}
-        <div className="bg-white rounded-2xl border-t-8 border-indigo-600 p-6 sm:p-8 shadow-sm border-x border-b border-slate-200">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-2">
-            {form.title}
-          </h1>
+        <div className="bg-white rounded-lg border border-slate-200/90 shadow-[0_1px_3px_rgba(60,64,67,0.15)] overflow-hidden">
+          <div className="h-2.5 bg-indigo-600 w-full" />
+          <div className="p-6 sm:p-7">
+            <h1 className="text-2xl sm:text-3xl font-normal text-slate-900 tracking-tight mb-2">
+              {form.title}
+            </h1>
 
-          {form.description && (
-            <p className="text-sm text-slate-600 whitespace-pre-line leading-relaxed mb-4">
-              {form.description}
-            </p>
-          )}
+            {form.description && (
+              <p className="text-sm text-slate-600 whitespace-pre-line leading-relaxed mb-4">
+                {form.description}
+              </p>
+            )}
 
-          {/* User Sign-In Banner */}
-          <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
-            {session?.user?.email ? (
-              <div className="text-slate-600 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>
-                  Responding as: <strong className="font-mono text-slate-800">{session.user.email}</strong>
+            {/* User Sign-In Banner */}
+            <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+              {session?.user?.email ? (
+                <div className="text-slate-600 flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-[10px]">
+                    {(session.user.name || session.user.email || "U").charAt(0).toUpperCase()}
+                  </div>
+                  <span>
+                    Responding as: <strong className="text-slate-800">{session.user.email}</strong>
+                  </span>
+                  <button 
+                    type="button"
+                    onClick={() => signIn("google-clients", { callbackUrl: window.location.href })}
+                    className="text-indigo-600 hover:underline cursor-pointer ml-1"
+                  >
+                    Switch account
+                  </button>
+                </div>
+              ) : (
+                <div className="text-slate-500">
+                  Responses are anonymous
+                </div>
+              )}
+
+              {form.isQuiz && (
+                <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 text-xs font-semibold flex items-center gap-1 border border-purple-200">
+                  <Zap className="w-3 h-3 text-purple-600" />
+                  Scored Quiz
                 </span>
-              </div>
-            ) : (
-              <div className="text-slate-500">
-                Responses are anonymous &bull; <span className="text-red-500">* Required fields</span>
-              </div>
-            )}
+              )}
+            </div>
 
-            {form.isQuiz && (
-              <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[11px] font-extrabold flex items-center gap-1">
-                <Zap className="w-3 h-3 text-purple-600" />
-                Scored Quiz
-              </span>
-            )}
+            <div className="mt-3 text-xs text-red-500 font-normal">
+              * Indicates required question
+            </div>
           </div>
         </div>
 
         {/* Questions Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {form.questions.map((q, idx) => {
             const hasError = validationErrors[q.id];
 
             return (
               <div
                 key={q.id}
-                className={`bg-white rounded-2xl border p-6 sm:p-7 shadow-sm transition-all ${
-                  hasError ? "border-red-400 ring-2 ring-red-100" : "border-slate-200"
+                className={`bg-white rounded-lg border shadow-[0_1px_3px_rgba(60,64,67,0.15)] p-6 transition-all focus-within:border-l-4 focus-within:border-l-indigo-600 ${
+                  hasError 
+                    ? "border-red-400 border-l-4 border-l-red-500" 
+                    : "border-slate-200/90"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
-                  <label className="text-base font-bold text-slate-900 leading-snug">
+                  <label className="text-sm sm:text-base font-normal text-slate-900 leading-snug">
                     {idx + 1}. {q.title}{" "}
                     {q.isRequired && <span className="text-red-500 font-bold">*</span>}
                   </label>
 
                   {form.isQuiz && q.points > 0 && (
-                    <span className="flex-shrink-0 text-xs px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 font-extrabold border border-purple-200">
+                    <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
                       {q.points} pts
                     </span>
                   )}
@@ -329,44 +348,53 @@ export default function PublicFormView({ slug }: { slug: string }) {
                       value={answers[q.id] || ""}
                       onChange={(e) => handleTextChange(q.id, e.target.value)}
                       placeholder="Your answer"
-                      className="w-full sm:w-3/4 px-3.5 py-2 text-sm border-b-2 border-slate-200 focus:border-indigo-600 outline-none transition-colors"
+                      className="w-full sm:w-80 py-1.5 text-sm bg-transparent border-b border-slate-300 focus:border-b-2 focus:border-indigo-600 outline-none transition-all placeholder:text-slate-400 text-slate-800"
                     />
                   )}
 
                   {/* Paragraph */}
                   {q.type === "paragraph" && (
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={answers[q.id] || ""}
                       onChange={(e) => handleTextChange(q.id, e.target.value)}
                       placeholder="Your answer"
-                      className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 form-input-focus resize-none"
+                      className="w-full py-1.5 text-sm bg-transparent border-b border-slate-300 focus:border-b-2 focus:border-indigo-600 outline-none transition-all placeholder:text-slate-400 text-slate-800 resize-none"
                     />
                   )}
 
                   {/* Multiple Choice (Radio) */}
                   {q.type === "multiple_choice" && (
-                    <div className="space-y-2.5 mt-2">
+                    <div className="space-y-1 mt-2">
                       {(q.options || []).map((opt, optIdx) => {
                         const isSelected = answers[q.id] === opt;
                         return (
                           <label
                             key={optIdx}
-                            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                              isSelected
-                                ? "border-indigo-600 bg-indigo-50/50 text-indigo-900 font-medium"
-                                : "border-slate-200 hover:bg-slate-50 text-slate-700"
-                            }`}
+                            className="flex items-center gap-3 py-2 px-1 rounded hover:bg-slate-50/80 cursor-pointer group transition-colors"
                           >
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                isSelected
+                                  ? "border-indigo-600 bg-white"
+                                  : "border-slate-400 group-hover:border-slate-600"
+                              }`}
+                            >
+                              {isSelected && (
+                                <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+                              )}
+                            </div>
                             <input
                               type="radio"
                               name={q.id}
                               value={opt}
                               checked={isSelected}
                               onChange={() => handleTextChange(q.id, opt)}
-                              className="w-4 h-4 text-indigo-600"
+                              className="sr-only"
                             />
-                            <span className="text-sm">{opt}</span>
+                            <span className={`text-sm ${isSelected ? "text-slate-900 font-medium" : "text-slate-700"}`}>
+                              {opt}
+                            </span>
                           </label>
                         );
                       })}
@@ -375,26 +403,33 @@ export default function PublicFormView({ slug }: { slug: string }) {
 
                   {/* Checkboxes (Multi Select) */}
                   {q.type === "checkboxes" && (
-                    <div className="space-y-2.5 mt-2">
+                    <div className="space-y-1 mt-2">
                       {(q.options || []).map((opt, optIdx) => {
                         const isChecked =
                           Array.isArray(answers[q.id]) && answers[q.id].includes(opt);
                         return (
                           <label
                             key={optIdx}
-                            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                              isChecked
-                                ? "border-indigo-600 bg-indigo-50/50 text-indigo-900 font-medium"
-                                : "border-slate-200 hover:bg-slate-50 text-slate-700"
-                            }`}
+                            className="flex items-center gap-3 py-2 px-1 rounded hover:bg-slate-50/80 cursor-pointer group transition-colors"
                           >
+                            <div
+                              className={`w-4 h-4 rounded-[3px] border-2 flex items-center justify-center transition-all ${
+                                isChecked
+                                  ? "border-indigo-600 bg-indigo-600 text-white"
+                                  : "border-slate-400 group-hover:border-slate-600 bg-white"
+                              }`}
+                            >
+                              {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
                             <input
                               type="checkbox"
                               checked={isChecked}
                               onChange={(e) => handleCheckboxChange(q.id, opt, e.target.checked)}
-                              className="w-4 h-4 text-indigo-600 rounded"
+                              className="sr-only"
                             />
-                            <span className="text-sm">{opt}</span>
+                            <span className={`text-sm ${isChecked ? "text-slate-900 font-medium" : "text-slate-700"}`}>
+                              {opt}
+                            </span>
                           </label>
                         );
                       })}
@@ -406,7 +441,7 @@ export default function PublicFormView({ slug }: { slug: string }) {
                     <select
                       value={answers[q.id] || ""}
                       onChange={(e) => handleTextChange(q.id, e.target.value)}
-                      className="w-full sm:w-2/3 px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white form-input-focus"
+                      className="w-full sm:w-2/3 px-3.5 py-2 text-sm rounded-lg border border-slate-300 bg-white focus:border-indigo-600 outline-none"
                     >
                       <option value="">-- Choose an option --</option>
                       {(q.options || []).map((opt, optIdx) => (
@@ -419,7 +454,7 @@ export default function PublicFormView({ slug }: { slug: string }) {
 
                   {/* Rating (1 to 5 Stars) */}
                   {q.type === "rating" && (
-                    <div className="flex items-center gap-3 py-2">
+                    <div className="flex items-center gap-2 py-2">
                       {[1, 2, 3, 4, 5].map((star) => {
                         const active = (answers[q.id] || 0) >= star;
                         return (
@@ -427,7 +462,7 @@ export default function PublicFormView({ slug }: { slug: string }) {
                             type="button"
                             key={star}
                             onClick={() => handleTextChange(q.id, star)}
-                            className="text-3xl transition-transform hover:scale-125 focus:outline-none"
+                            className="text-2xl transition-transform hover:scale-110 focus:outline-none"
                           >
                             <span className={active ? "text-amber-400" : "text-slate-300"}>
                               ★
@@ -436,8 +471,8 @@ export default function PublicFormView({ slug }: { slug: string }) {
                         );
                       })}
                       {answers[q.id] && (
-                        <span className="text-xs font-bold text-slate-500 ml-2">
-                          {answers[q.id]} / 5 Stars
+                        <span className="text-xs font-medium text-slate-500 ml-2">
+                          {answers[q.id]} / 5
                         </span>
                       )}
                     </div>
@@ -450,7 +485,7 @@ export default function PublicFormView({ slug }: { slug: string }) {
                       value={answers[q.id] || ""}
                       onChange={(e) => handleTextChange(q.id, e.target.value)}
                       placeholder="0"
-                      className="w-48 px-3.5 py-2 text-sm rounded-xl border border-slate-200 form-input-focus"
+                      className="w-48 py-1.5 text-sm bg-transparent border-b border-slate-300 focus:border-b-2 focus:border-indigo-600 outline-none"
                     />
                   )}
 
@@ -460,14 +495,14 @@ export default function PublicFormView({ slug }: { slug: string }) {
                       type="date"
                       value={answers[q.id] || ""}
                       onChange={(e) => handleTextChange(q.id, e.target.value)}
-                      className="w-48 px-3.5 py-2 text-sm rounded-xl border border-slate-200 form-input-focus"
+                      className="w-48 py-1.5 text-sm bg-transparent border-b border-slate-300 focus:border-b-2 focus:border-indigo-600 outline-none"
                     />
                   )}
                 </div>
 
                 {/* Validation Error Message */}
                 {hasError && (
-                  <p className="text-xs text-red-500 mt-2 font-semibold flex items-center gap-1">
+                  <p className="text-xs text-red-500 mt-2 font-medium flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>{hasError}</span>
                   </p>
@@ -477,14 +512,13 @@ export default function PublicFormView({ slug }: { slug: string }) {
           })}
 
           {/* Submit Action Bar */}
-          <div className="flex items-center justify-between pt-4">
+          <div className="flex items-center justify-between pt-2">
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all hover:-translate-y-0.5 disabled:opacity-50"
+              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-md shadow-sm transition-all disabled:opacity-50"
             >
-              <Send className="w-4 h-4" />
-              <span>{submitting ? "Submitting..." : "Submit Response"}</span>
+              {submitting ? "Submitting..." : "Submit"}
             </button>
 
             <button
@@ -495,7 +529,7 @@ export default function PublicFormView({ slug }: { slug: string }) {
                   setValidationErrors({});
                 }
               }}
-              className="text-xs text-slate-500 hover:text-slate-800 font-semibold"
+              className="text-xs text-slate-500 hover:text-slate-800 font-medium px-3 py-1.5 hover:bg-slate-200/50 rounded transition-colors"
             >
               Clear form
             </button>
@@ -503,8 +537,11 @@ export default function PublicFormView({ slug }: { slug: string }) {
         </form>
 
         {/* Footer info */}
-        <div className="text-center text-xs text-slate-400 py-6">
-          Powered by <strong>ZeForm.</strong> &bull; Custom Subdomain Form Engine
+        <div className="text-center text-[11px] text-slate-500 py-6 space-y-1">
+          <div>Never submit passwords through ZeForm.</div>
+          <div className="text-slate-400">
+            Powered by <strong className="text-slate-600 font-semibold">ZeForm.</strong> • Custom Subdomain Form Engine
+          </div>
         </div>
       </div>
     </div>
