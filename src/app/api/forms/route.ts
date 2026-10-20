@@ -69,13 +69,12 @@ export async function POST(req: NextRequest) {
       ],
     });
 
-    // Attempt Cloudflare DNS and Pages custom domain registration in background
-    createSubdomainDnsRecord(finalSlug).catch((err) =>
-      console.warn("Cloudflare DNS auto-record warning:", err)
-    );
-    registerPagesCustomDomain(finalSlug).catch((err) =>
-      console.warn("Cloudflare Pages custom domain warning:", err)
-    );
+    // Automatically register Cloudflare Pages custom domain for instant SSL & routing
+    try {
+      await registerPagesCustomDomain(finalSlug);
+    } catch (err) {
+      console.warn("Cloudflare Pages custom domain auto-registration warning:", err);
+    }
 
     return NextResponse.json({ form }, { status: 201 });
   } catch (error: any) {

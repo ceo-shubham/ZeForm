@@ -76,9 +76,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
       }
       updatedSlug = formattedSlug;
 
-      // Register with Cloudflare if configured
-      createSubdomainDnsRecord(updatedSlug).catch(() => {});
-      registerPagesCustomDomain(updatedSlug).catch(() => {});
+      // Register custom domain with Cloudflare Pages
+      try {
+        await registerPagesCustomDomain(updatedSlug);
+      } catch (err) {
+        console.warn("Cloudflare Pages custom domain update warning:", err);
+      }
     }
 
     const updated = await updateForm(id, {

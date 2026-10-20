@@ -50,12 +50,16 @@ export async function GET(req: NextRequest) {
 
     const response = NextResponse.redirect(finalRedirect.startsWith("http") ? finalRedirect : `${origin}${finalRedirect}`);
 
+    const isProduction = process.env.NODE_ENV === "production" || origin.includes("zenstro.space");
+    const cookieDomain = isProduction ? ".zenstro.space" : undefined;
+
     response.cookies.set({
       name: COOKIE_NAME,
       value: token,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       sameSite: "lax",
+      domain: cookieDomain,
       path: "/",
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });

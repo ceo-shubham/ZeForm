@@ -346,9 +346,9 @@ export default function UserDashboard() {
                         )}
                       </button>
                       <Link
-                        href={directPathUrl}
+                        href={fullSubdomainUrl}
                         target="_blank"
-                        title="Open Live Form"
+                        title="Open Live Subdomain Form"
                         className="p-1 text-slate-500 hover:text-indigo-600 hover:bg-slate-200 rounded transition-colors"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
