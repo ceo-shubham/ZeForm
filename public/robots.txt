@@ -1,0 +1,36 @@
+User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /auth/signin
+Allow: /f/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /builder/
+
+User-agent: GPTBot
+Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /llms.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /llms.txt
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /llms.txt
+
+User-agent: Google-Extended
+Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /llms.txt
+
+Sitemap: https://zeform.zenstro.space/sitemap.xml

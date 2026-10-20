@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import HeroFormPreview from "@/components/HeroFormPreview";
 
+export const runtime = "edge";
+
 const faqList = [
   {
     question: "How do custom subdomains work in ZeForm?",

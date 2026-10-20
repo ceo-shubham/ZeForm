@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowLeft, FileCheck } from "lucide-react";
 import type { Metadata } from "next";
 
+export const runtime = "edge";
+
 export const metadata: Metadata = {
   title: "Terms and Conditions - ZeForm.",
   description: "Terms and conditions governing the use of the ZeForm form builder and subdomain service.",
