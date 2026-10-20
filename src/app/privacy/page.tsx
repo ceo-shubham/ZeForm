@@ -3,8 +3,6 @@ import Link from "next/link";
 import { ArrowLeft, Shield } from "lucide-react";
 import type { Metadata } from "next";
 
-export const runtime = "edge";
-
 export const metadata: Metadata = {
   title: "Privacy Policy - ZeForm.",
   description: "Learn how ZeForm collects, uses, and protects your personal information and form data.",
