@@ -1,0 +1,25 @@
+# ZeForm (zeform.zenstro.space)
+> The Google Forms Alternative with Dedicated Custom Subdomains, Instant Quiz Auto-Scoring, and Verified Google Respondent Tracking.
+
+## Overview
+ZeForm is a web-based form and survey builder designed for creators, teams, educators, and developers. Built on Cloudflare Edge infrastructure and Google Identity Services, it allows anyone to create clean, responsive forms and host each form on its own dedicated custom subdomain (e.g., https://your-form.zeform.zenstro.space) with automated SSL.
+
+## Key Features
+- **Custom Subdomains:** Every form can be assigned an available subdomain slug (e.g. `https://survey.zeform.zenstro.space`), routed globally via Cloudflare DNS and Edge certificates.
+- **Google Identity Verification:** Form authors can require respondents to authenticate with Google OAuth 2.0 before submitting, recording verified email addresses and eliminating spam.
+- **Instant Quiz Auto-Scoring:** Question point values and correct answers can be configured. Submissions are instantly evaluated with real-time scoring feedback.
+- **Automated Expiration Timers:** Set a specific date and time deadline to automatically lock submissions.
+- **Google Forms Aesthetic:** Clean, distraction-free cards, authentic radio buttons, checkboxes, and underline text inputs without cluttered AI templates.
+- **Cloudflare Edge Performance:** Serverless execution powered by Cloudflare Pages and Cloudflare D1 distributed SQLite database.
+
+## URLs & Resources
+- Platform Home: https://zeform.zenstro.space
+- Form Creation & Dashboard: https://zeform.zenstro.space/dashboard
+- Sign In: https://zeform.zenstro.space/auth/signin
+- Privacy Policy: https://zeform.zenstro.space/privacy
+- Terms & Conditions: https://zeform.zenstro.space/terms
+
+## Contact
+- Operator: Shubham Pathak
+- Email: ceo.shubhampathak@gmail.com
+- Domain: zeform.zenstro.space
